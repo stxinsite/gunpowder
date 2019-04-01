@@ -1,5 +1,10 @@
+""" Module for base BatchFilter class
+"""
+
 import copy
 import logging
+
+from abc import abstractmethod
 
 from .batch_provider import BatchProvider
 from gunpowder.profiling import Timing
@@ -19,7 +24,7 @@ class BatchFilter(BatchProvider):
 
         :func:`setup`
 
-            Initialize this filter. Called after setup of the DAG. All upstream 
+            Initialize this filter. Called after setup of the DAG. All upstream
             providers will be set up already.
 
         :func:`teardown`
@@ -28,7 +33,7 @@ class BatchFilter(BatchProvider):
 
         :func:`prepare`
 
-            Prepare for a batch request. Always called before each 
+            Prepare for a batch request. Always called before each
             :func:`process`. Use it to modify a batch request to be passed
             upstream.
     '''
@@ -154,17 +159,7 @@ class BatchFilter(BatchProvider):
 
         return True
 
-    def setup(self):
-        '''To be implemented in subclasses.
-
-        Called during initialization of the DAG. Callees can assume that all
-        upstream providers are set up already.
-
-        In setup, call :func:`provides` or :func:`updates` to announce the
-        arrays and points provided or changed by this node.
-        '''
-        pass
-
+    @abstractmethod
     def prepare(self, request):
         '''To be implemented in subclasses.
 
@@ -173,6 +168,7 @@ class BatchFilter(BatchProvider):
         '''
         pass
 
+    @abstractmethod
     def process(self, batch, request):
         '''To be implemented in subclasses.
 
@@ -191,4 +187,4 @@ class BatchFilter(BatchProvider):
                 The request this node received. The updated batch should meet
                 this request.
         '''
-        raise RuntimeError("Class %s does not implement 'process'"%type(self).__name__)
+        pass

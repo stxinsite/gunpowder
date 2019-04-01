@@ -1,5 +1,11 @@
+""" Module for base BatchProvider class
+"""
+
 import copy
 import logging
+
+from abc import ABC, abstractmethod
+
 from gunpowder.coordinate import Coordinate
 from gunpowder.points_spec import PointsSpec
 from gunpowder.provider_spec import ProviderSpec
@@ -8,7 +14,7 @@ from gunpowder.array_spec import ArraySpec
 
 logger = logging.getLogger(__name__)
 
-class BatchProvider(object):
+class BatchProvider(ABC):
     '''Superclass for all nodes in a `gunpowder` graph.
 
     A :class:`BatchProvider` provides :class:`Batches<Batch>` containing
@@ -33,6 +39,7 @@ class BatchProvider(object):
             self.upstream_providers = []
         return self.upstream_providers
 
+    @abstractmethod
     def setup(self):
         '''To be implemented in subclasses.
 
@@ -42,8 +49,9 @@ class BatchProvider(object):
         In setup, call :func:`provides` to announce the arrays and points
         provided by this node.
         '''
-        raise NotImplementedError("Class %s does not implement 'setup'"%self.name())
+        pass
 
+    @abstractmethod
     def teardown(self):
         '''To be implemented in subclasses.
 
@@ -51,6 +59,22 @@ class BatchProvider(object):
         stop worker processes, if they used some.
         '''
         pass
+
+    @abstractmethod
+    def provide(self, request):
+        '''To be implemented in subclasses.
+
+        This function takes a :class:`BatchRequest` and should return the
+        corresponding :class:`Batch`.
+
+        Args:
+
+            request(:class:`BatchRequest`):
+
+                The request to process.
+        '''
+        pass
+
 
     def provides(self, key, spec):
         '''Introduce a new output provided by this :class:`BatchProvider`.
@@ -95,6 +119,7 @@ class BatchProvider(object):
 
         self.teardown()
 
+    # TODO: this can be more elegantly handled with an abstract property
     @property
     def spec(self):
         '''Get the :class:`ProviderSpec` of this :class:`BatchProvider`.
@@ -209,7 +234,7 @@ class BatchProvider(object):
                     self.spec[array_key].voxel_size,
                     array.spec.voxel_size,
                     array_key))
-            # ensure that the spatial dimensions are the same (other dimensions 
+            # ensure that the spatial dimensions are the same (other dimensions
             # on top are okay, e.g., for affinities)
             if request_spec.roi is not None:
                 dims = request_spec.roi.dims()
@@ -245,20 +270,6 @@ class BatchProvider(object):
         for key in batch_keys:
             if key not in request:
                 del batch[key]
-
-    def provide(self, request):
-        '''To be implemented in subclasses.
-
-        This function takes a :class:`BatchRequest` and should return the
-        corresponding :class:`Batch`.
-
-        Args:
-
-            request(:class:`BatchRequest`):
-
-                The request to process.
-        '''
-        raise NotImplementedError("Class %s does not implement 'provide'"%self.name())
 
     def name(self):
         return type(self).__name__
